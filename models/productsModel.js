@@ -46,6 +46,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    brand: {
+      type: String,
+      required: true,
+    },
     reviews: {
       type: Array,
       default: [],

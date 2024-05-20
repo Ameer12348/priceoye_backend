@@ -1,10 +1,10 @@
 {
-  "name": "priceoye backend",
+  "name": "priceoye_backend",
   "version": "1.0.0",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "nodemon server.js"
   },
   "keywords": [],
   "author": "Ameer Hamza",

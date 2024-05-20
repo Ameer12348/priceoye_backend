@@ -11,8 +11,10 @@ const {
   getnotallowedreviews,
   updateallowedreview,
   getProductsByType,
+  searchProduct,
 } = require("../controllers/productControllers");
 const { addImages } = require("../helper/productHelper");
+const productsModel = require("../models/productsModel");
 
 const router = express.Router();
 
@@ -25,6 +27,7 @@ router.post(
 );
 router.get("/products", getProducts);
 router.get("/products/:type", getProductsByType);
+router.get("/searchproduct/:search", searchProduct);
 router.get("/getproduct/:slug", getSingleProduct);
 router.delete("/deleteproduct/:_id", getVerifyToken, isAdmin, deleteProduct);
 router.put(
@@ -48,5 +51,11 @@ router.put(
   isAdmin,
   updateallowedreview
 );
+
+router.get("/test", (req, res) => {
+  const genre = req.query.genre;
+  const genre2 = genre.split(",");
+  res.send({ genre: genre2 });
+});
 
 module.exports = router;

@@ -152,4 +152,160 @@ const userGetController = async (req, res) => {
   }
 };
 
-module.exports = { registerController, logInController, userGetController };
+// useget controller by admin
+const userGetByAdmin = async (req, res) => {
+  try {
+    const _id = req.params._id;
+    if (!_id) {
+      return res
+        .status(404)
+        .send({ success: false, error: "user details not found in params" });
+    }
+    const gettingUser = await userModel.findOne({ _id });
+    if (!gettingUser) {
+      return res
+        .status(404)
+        .send({ success: false, error: "user not found in database" });
+    }
+    res.status(200).send({
+      success: true,
+      message: "use got successfully",
+      user: {
+        name: gettingUser.name,
+        email: gettingUser.email,
+        phone: gettingUser.phone,
+        address: gettingUser.address,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+// getting all users by admin
+const getAllUsersData = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(404).send({ success: false, error: "User not found" });
+    }
+    const allusersdata = await userModel.find({}).sort({ createdAt: -1 });
+    const users = allusersdata.map((user1) => {
+      return {
+        _id: user1._id,
+        name: user1.name,
+        email: user1.email,
+        phone: user1.phone,
+        role: user1.role,
+        createdAt: user1.createdAt,
+        address: user1.address,
+      };
+    });
+    res.send({
+      success: true,
+      message: "all users got",
+      users,
+    });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+// update user role by Admin
+
+const updateUserRole = async (req, res) => {
+  try {
+    const _id = req.params._id;
+    const action = req.body.action;
+    const user = req.user;
+    if (!_id) {
+      return res
+        .status(404)
+        .send({ success: false, error: "user not found in params" });
+    }
+    if (!action) {
+      return res
+        .status(404)
+        .send({ success: false, error: "action not found" });
+    }
+    const usercheck = await userModel.find({ _id });
+    if (!usercheck) {
+      return res
+        .status(404)
+        .send({ success: false, error: "user not found in database" });
+    }
+
+    const updateuser = await userModel.findByIdAndUpdate(
+      _id,
+      {
+        role: action,
+      },
+      {
+        new: true,
+      }
+    );
+    if (!updateuser) {
+      return res
+        .status(500)
+        .send({ success: false, error: "an error occurred" });
+    }
+    const allusersdata = await userModel.find({}).sort({ createdAt: -1 });
+    const users = allusersdata.map((user1) => {
+      return {
+        _id: user1._id,
+        name: user1.name,
+        email: user1.email,
+        phone: user1.phone,
+        role: user1.role,
+        createdAt: user1.createdAt,
+        address: user1.address,
+      };
+    });
+
+    res
+      .status(200)
+      .send({ success: true, message: "user updated successfull", users });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+// getting user data by its own
+
+const getUserDataByUser = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(404).send({ success: false, error: "user not found" });
+    }
+    const checkuser = await userModel.findById(user._id);
+    if (!checkuser) {
+      return res
+        .status(404)
+        .send({ success: false, error: "user not found in database" });
+    }
+    res.status(200).send({
+      success: true,
+      message: "user got successfully",
+      user: {
+        _id: checkuser._id,
+        name: checkuser.name,
+        email: checkuser.email,
+        phone: checkuser.phone,
+        address: checkuser.address,
+      },
+    });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+module.exports = {
+  registerController,
+  logInController,
+  userGetController,
+  userGetByAdmin,
+  getAllUsersData,
+  updateUserRole,
+  getUserDataByUser,
+};

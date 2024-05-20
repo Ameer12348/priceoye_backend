@@ -4,7 +4,7 @@ require("dotenv").config();
 const database = async (app, PORT) => {
   try {
     await mongoose.connect(process.env.MONGO_URL);
-    await console.log(" database connection established ".bgGreen.white);
+    console.log(" database connection established ".bgGreen.white);
     app.listen(PORT, () => {
       console.log(`listening on ${PORT}`.bgWhite);
     });

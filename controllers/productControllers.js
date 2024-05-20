@@ -18,6 +18,7 @@ const createProduct = async (req, res) => {
       newPrice,
       stock,
       reviews,
+      brand,
     } = req.body;
     // checking validations
     switch (true) {
@@ -56,6 +57,10 @@ const createProduct = async (req, res) => {
         return res
           .status(404)
           .send({ success: false, error: "please provide product newPrice" });
+      case !brand:
+        return res
+          .status(404)
+          .send({ success: false, error: "please provide product brand" });
     }
     let parsedDetails;
     if (typeof productDetails !== "object") {
@@ -79,6 +84,7 @@ const createProduct = async (req, res) => {
       slug,
       description,
       metaDescription,
+      brand,
       productDetails: parsedDetails,
       lastPrice,
       newPrice,
@@ -111,10 +117,7 @@ const createProduct = async (req, res) => {
 const getProducts = async (req, res) => {
   try {
     // getting products and setting the limit of 20
-    const products = await productsModel
-      .find({})
-      .limit(20)
-      .sort({ createdAt: -1 });
+    const products = await productsModel.find({}).sort({ createdAt: -1 });
     res.send({ success: true, total: products.length, products });
   } catch (error) {
     console.log(error);
@@ -125,12 +128,113 @@ const getProducts = async (req, res) => {
 const getProductsByType = async (req, res) => {
   try {
     const type = req.params.type;
-    // getting products and setting the limit of 20
+    const limit = req.query.limit || 20;
+    const page = req.query.page || 1;
+    let brand = req.query.brand;
+    let price = req.query.pricing;
+    let sort = req.query.sort;
+    let sorting = {};
+
+    const args = {
+      type,
+    };
+
+    if (brand) {
+      if (brand.length > 0) {
+        brand = brand.split(",");
+        args.brand = brand;
+      }
+    }
+    if (price) {
+      if (price.length > 0) {
+        price = price.split(",");
+        let all = [];
+        price.map((hi) => {
+          let splitted = hi.split("to");
+          all.push({ newPrice: { $gte: splitted[0], $lte: splitted[1] } });
+        });
+        args.$or = all;
+      }
+    }
+
+    if (sort) {
+      if (sort === "price_inc") {
+        sorting.newPrice = 1;
+      }
+      if (sort === "price_dec") {
+        sorting.newPrice = -1;
+      }
+    } else {
+      sorting.createdAt = -1;
+    }
+
+    const totalCount = (await productsModel.find(args)).length;
     const products = await productsModel
-      .find({ type })
-      .limit(20)
-      .sort({ createdAt: -1 });
-    res.send({ success: true, total: products.length, products });
+      .find(args)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort(sorting);
+
+    res.send({ success: true, products, total: totalCount, page });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+const searchProduct = async (req, res) => {
+  try {
+    const search = req.params.search;
+    const limit = req.query.limit || 20;
+    const page = req.query.page || 1;
+    let brand = req.query.brand;
+    let price = req.query.pricing;
+    let sort = req.query.sort;
+    let sorting = {};
+
+    const args = {
+      $and: [
+        { title: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+      ],
+    };
+
+    if (brand) {
+      if (brand.length > 0) {
+        brand = brand.split(",");
+        args.brand = brand;
+      }
+    }
+    if (price) {
+      if (price.length > 0) {
+        price = price.split(",");
+        let all = [];
+        price.map((hi) => {
+          let splitted = hi.split("to");
+          all.push({ newPrice: { $gte: splitted[0], $lte: splitted[1] } });
+        });
+        args.$or = all;
+      }
+    }
+
+    if (sort) {
+      if (sort === "price_inc") {
+        sorting.newPrice = 1;
+      }
+      if (sort === "price_dec") {
+        sorting.newPrice = -1;
+      }
+    } else {
+      sorting.createdAt = -1;
+    }
+
+    const totalCount = (await productsModel.find(args)).length;
+    const products = await productsModel
+      .find(args)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort(sorting);
+
+    res.send({ success: true, products, total: totalCount, page });
   } catch (error) {
     console.log(error);
     res.status(500).send({ success: false, error: error.message });
@@ -200,6 +304,7 @@ const updateProduct = async (req, res) => {
       newPrice,
       stock,
       reviews,
+      brand,
     } = req.body;
 
     switch (true) {
@@ -239,6 +344,10 @@ const updateProduct = async (req, res) => {
         return res
           .status(404)
           .send({ success: false, error: "please provide product newPrice" });
+      case !brand:
+        return res
+          .status(404)
+          .send({ success: false, error: "please provide product brand" });
     }
     // checking slug
     const slugcheck = await productsModel.findOne({ slug });
@@ -266,6 +375,7 @@ const updateProduct = async (req, res) => {
         slug,
         description,
         metaDescription,
+        brand,
         productDetails: parsedDetails,
         lastPrice,
         newPrice,
@@ -442,9 +552,9 @@ const getnotallowedreviews = async (req, res) => {
     notallowedreviews.sort((a, b) => {
       return new Date(a.createdAt) - new Date(b.createdAt);
     });
+    notallowedreviews.reverse();
     res.send({ reviews: notallowedreviews, success: true });
   } catch (error) {
-    console.log(error);
     res.send({ success: false, error: error.message });
   }
 };
@@ -502,4 +612,5 @@ module.exports = {
   getnotallowedreviews,
   updateallowedreview,
   getProductsByType,
+  searchProduct,
 };
